@@ -7,3 +7,20 @@ build/
 # 本地运行日志
 logs/
 *.log
+
+# 编辑器与 IDE 的本地配置（不提交）
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.project
+.classpath
+.settings/
+.apt_generated
+.factorypath
+.springBeans
+.sts4-cache
+
+# Spring Initializr 生成的帮助文件，不需要版本控制
+HELP.md
