@@ -24,3 +24,6 @@ logs/
 
 # Spring Initializr 生成的帮助文件，不需要版本控制
 HELP.md
+
+# 本地真实配置（含密码），绝不提交
+application-local.properties
