@@ -1,6 +1,9 @@
 package com.campus.erp.application;
 
+import com.campus.erp.auth.CurrentUser;
 import com.campus.erp.common.Result;
+import com.campus.erp.common.SessionUtils;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,15 +18,16 @@ import java.util.List;
  * 申请单接口。
  *
  * 五个动作对应五个端点：
- *   POST /api/applications/{id}/submit   ?operatorId=  提交
- *   POST /api/applications/{id}/approve  ?operatorId=&approvedAmount=  批准
- *   POST /api/applications/{id}/reject   ?operatorId=&reason=          拒绝
- *   POST /api/applications/{id}/cancel   ?operatorId=&reason=          取消
- *   POST /api/applications/{id}/settle   ?operatorId=&actualAmount=    结算
+ *   POST /api/applications/{id}/submit   ?           提交（申请人本人）
+ *   POST /api/applications/{id}/approve  ?approvedAmount=  批准（项目里的老师）
+ *   POST /api/applications/{id}/reject   ?reason=          拒绝（项目里的老师）
+ *   POST /api/applications/{id}/cancel   ?reason=          取消（申请人本人）
+ *   POST /api/applications/{id}/settle   ?actualAmount=    结算（项目里的财务）
  *
- * ⚠️ operatorId 目前由请求参数传入，仅用于把功能跑通。
- *    正式版必须改成从登录会话（HttpSession）中取当前用户，
- *    否则任何人改一下参数就能冒充别人操作。
+ * 【D7 关键变化】
+ *   参数里不再有 operatorId。
+ *   操作人一律从 HttpSession 里取，前端无法冒充别人。
+ *   要"以王老师的身份操作"，就得真的登录成王老师。
  */
 @RestController
 @RequestMapping("/api/applications")
@@ -52,44 +56,49 @@ public class ApplicationController {
 
     /** 提交申请 */
     @PostMapping("/{id}/submit")
-    public Result<Void> submit(@PathVariable Long id, @RequestParam Long operatorId) {
-        applicationService.submit(id, operatorId);
+    public Result<Void> submit(@PathVariable Long id, HttpSession session) {
+        CurrentUser user = SessionUtils.requireUser(session);
+        applicationService.submit(id, user);
         return Result.ok();
     }
 
     /** 批准（可减额） */
     @PostMapping("/{id}/approve")
     public Result<Void> approve(@PathVariable Long id,
-                                @RequestParam Long operatorId,
-                                @RequestParam BigDecimal approvedAmount) {
-        applicationService.approve(id, operatorId, approvedAmount);
+                                @RequestParam BigDecimal approvedAmount,
+                                HttpSession session) {
+        CurrentUser user = SessionUtils.requireUser(session);
+        applicationService.approve(id, user, approvedAmount);
         return Result.ok();
     }
 
     /** 拒绝 */
     @PostMapping("/{id}/reject")
     public Result<Void> reject(@PathVariable Long id,
-                               @RequestParam Long operatorId,
-                               @RequestParam String reason) {
-        applicationService.reject(id, operatorId, reason);
+                               @RequestParam String reason,
+                               HttpSession session) {
+        CurrentUser user = SessionUtils.requireUser(session);
+        applicationService.reject(id, user, reason);
         return Result.ok();
     }
 
     /** 取消（申请人本人） */
     @PostMapping("/{id}/cancel")
     public Result<Void> cancel(@PathVariable Long id,
-                               @RequestParam Long operatorId,
-                               @RequestParam String reason) {
-        applicationService.cancel(id, operatorId, reason);
+                               @RequestParam String reason,
+                               HttpSession session) {
+        CurrentUser user = SessionUtils.requireUser(session);
+        applicationService.cancel(id, user, reason);
         return Result.ok();
     }
 
     /** 结算（财务） */
     @PostMapping("/{id}/settle")
     public Result<Void> settle(@PathVariable Long id,
-                               @RequestParam Long operatorId,
-                               @RequestParam BigDecimal actualAmount) {
-        applicationService.settle(id, operatorId, actualAmount);
+                               @RequestParam BigDecimal actualAmount,
+                               HttpSession session) {
+        CurrentUser user = SessionUtils.requireUser(session);
+        applicationService.settle(id, user, actualAmount);
         return Result.ok();
     }
 }

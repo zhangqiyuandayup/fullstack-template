@@ -69,4 +69,18 @@ public interface ProjectMapper {
     int settle(@Param("id") Long id,
                @Param("approved") BigDecimal approved,
                @Param("actual") BigDecimal actual);
+
+    /**
+     * 查某人是否属于某项目。
+     * 返回 1 表示是本项目成员，0 表示不是。
+     *
+     * 用途：老师只能审批自己负责的项目，财务只能结算自己负责的项目。
+     */
+    @Select("""
+            SELECT COUNT(*)
+            FROM project_member
+            WHERE project_id = #{projectId}
+              AND member_id = #{memberId}
+            """)
+    int countMembership(@Param("projectId") Long projectId, @Param("memberId") Long memberId);
 }
