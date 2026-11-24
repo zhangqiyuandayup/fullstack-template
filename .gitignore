@@ -18,3 +18,6 @@ Desktop.ini
 *.pfx
 *.class
 # 不忽略 .agents/，项目技能和脱敏会话记录需要提交
+
+# curl 测试时保存的本地 Cookie，不入库
+cookies.txt
