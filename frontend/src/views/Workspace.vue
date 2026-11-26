@@ -59,6 +59,7 @@
           <div class="table-header">
             <span>申请列表</span>
             <div>
+              <el-button type="primary" size="small" @click="openCreate">新建申请</el-button>
               <el-button size="small" @click="loadAll">刷新</el-button>
             </div>
           </div>
@@ -132,6 +133,32 @@
         </div>
       </el-card>
 
+      <!-- ===== 新建申请对话框 ===== -->
+      <el-dialog v-model="createVisible" title="新建申请" width="460px">
+        <el-form :model="createForm" label-width="80px">
+          <el-form-item label="用途">
+            <el-input
+              v-model="createForm.purpose"
+              placeholder="例如：采购传感器"
+              maxlength="200"
+              show-word-limit
+            />
+          </el-form-item>
+          <el-form-item label="申请金额">
+            <el-input v-model="createForm.requestedAmount" placeholder="例如：120.00">
+              <template #append>元</template>
+            </el-input>
+          </el-form-item>
+        </el-form>
+        <p class="dialog-tip">
+          新建的是<strong>草稿</strong>，此时不占用经费；点"提交"后才从可用转入冻结。
+        </p>
+        <template #footer>
+          <el-button @click="createVisible = false">取消</el-button>
+          <el-button type="primary" :loading="creating" @click="handleCreate">创建</el-button>
+        </template>
+      </el-dialog>
+
       <!-- 提示：前端按钮只是"显示与否"，真正的权限在后端 -->
       <p class="footnote">
         * 页面上的按钮是否显示，只影响操作体验；真正的权限校验在后端 Service 中。
@@ -150,6 +177,7 @@ import { logout } from '../api/auth'
 import { getProject } from '../api/project'
 import {
   listApplications,
+  createApplication,
   submitApplication,
   approveApplication,
   rejectApplication,
@@ -163,6 +191,46 @@ const user = ref(JSON.parse(localStorage.getItem('loginUser') || 'null'))
 const project = ref({})
 const applications = ref([])
 const loading = ref(false)
+
+/** 新建申请对话框 */
+const createVisible = ref(false)
+const creating = ref(false)
+const createForm = ref({ purpose: '', requestedAmount: '' })
+
+function openCreate() {
+  createForm.value = { purpose: '', requestedAmount: '' }
+  createVisible.value = true
+}
+
+async function handleCreate() {
+  const purpose = createForm.value.purpose?.trim()
+  const amount = createForm.value.requestedAmount
+
+  if (!purpose) {
+    ElMessage.warning('请填写用途')
+    return
+  }
+  if (!/^\d+(\.\d{1,2})?$/.test(amount) || Number(amount) <= 0) {
+    ElMessage.warning('请填写大于 0 的金额，最多两位小数')
+    return
+  }
+
+  creating.value = true
+  try {
+    const newId = await createApplication({
+      projectId: PROJECT_ID,
+      purpose,
+      requestedAmount: Number(amount)
+    })
+    ElMessage.success(`已创建申请单 #${newId}（草稿）`)
+    createVisible.value = false
+    await loadAll()
+  } catch (e) {
+    // 错误提示由拦截器统一处理
+  } finally {
+    creating.value = false
+  }
+}
 
 /** 本演示固定操作 1 号项目 */
 const PROJECT_ID = 1
@@ -460,6 +528,15 @@ onMounted(loadAll)
   text-align: center;
   color: #909399;
   font-size: 13px;
+}
+.dialog-tip {
+  margin: 0;
+  padding: 8px 12px;
+  background: #f4f4f5;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #606266;
 }
 .footnote {
   margin-top: 16px;

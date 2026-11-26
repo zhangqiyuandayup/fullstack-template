@@ -39,6 +39,44 @@ public class ApplicationService {
     }
 
     // ============================================================
+    // 新建草稿：不占经费，只是先把想法记下来
+    // 谁可以：该项目的成员
+    // 返回：新申请单的 id
+    // ============================================================
+    @Transactional
+    public Long create(CurrentUser user, Long projectId, String purpose, BigDecimal requestedAmount) {
+
+        Project project = requireProject(projectId);
+
+        // ① 必须是项目成员
+        if (projectMapper.countMembership(projectId, user.getId()) == 0) {
+            throw new BizException(403, "你不在该项目中，无法发起申请");
+        }
+        // ② 用途
+        if (purpose == null || purpose.trim().isEmpty()) {
+            throw new BizException("用途不能为空");
+        }
+        // ③ 金额
+        if (requestedAmount == null || requestedAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BizException("申请金额必须大于 0");
+        }
+        if (requestedAmount.scale() > 2) {
+            throw new BizException("申请金额最多两位小数");
+        }
+
+        FundApplication app = new FundApplication();
+        app.setProjectId(projectId);
+        app.setApplicantId(user.getId());          // ← 申请人只能是本人
+        app.setPurpose(purpose.trim());
+        app.setRequestedAmount(requestedAmount);
+        app.setStatus(ApplicationStatus.DRAFT);
+
+        // 注意：草稿不冻结经费，所以这里完全不碰 project 表
+        applicationMapper.insert(app);
+        return app.getId();
+    }
+
+    // ============================================================
     // 提交：草稿 → 待审批，冻结经费
     // 谁可以：申请人本人
     // ============================================================

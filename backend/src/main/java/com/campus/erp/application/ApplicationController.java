@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -52,6 +53,19 @@ public class ApplicationController {
     @GetMapping("/{id}")
     public Result<FundApplication> detail(@PathVariable Long id) {
         return Result.ok(applicationMapper.findById(id));
+    }
+
+    /**
+     * 新建申请草稿：POST /api/applications
+     * Body: {"projectId":1,"purpose":"买硬盘","requestedAmount":120.00}
+     * 返回：新申请单的 id
+     */
+    @PostMapping
+    public Result<Long> create(@RequestBody CreateApplicationRequest request, HttpSession session) {
+        CurrentUser user = SessionUtils.requireUser(session);
+        Long id = applicationService.create(
+                user, request.getProjectId(), request.getPurpose(), request.getRequestedAmount());
+        return Result.ok(id);
     }
 
     /** 提交申请 */
