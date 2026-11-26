@@ -1,11 +1,41 @@
 # 依赖和生成产物
 node_modules/
 dist/
+dist-ssr/
 coverage/
 .vite/
+*.local
 
 # 包管理器本地日志；锁文件需要提交
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# 日志目录
+logs/
+*.log
+
+# 编辑器与系统文件
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 本地环境变量：真实值留在本地，只提交示例
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# 常见私钥与凭据容器
+*.key
+*.pem
+*.p12
+*.pfx
