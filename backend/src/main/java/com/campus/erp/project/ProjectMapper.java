@@ -27,6 +27,14 @@ public interface ProjectMapper {
             """)
     Project findById(@Param("id") Long id);
 
+    /** 查全部项目（前端首页展示用） */
+    @Select("""
+            SELECT id, name, total_budget, available, frozen, used, created_at
+            FROM project
+            ORDER BY id
+            """)
+    java.util.List<Project> findAll();
+
     /**
      * 冻结：可用 → 冻结。
      * 用于"提交申请"。
