@@ -1,6 +1,8 @@
 package com.campus.erp.application;
 
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
@@ -62,4 +64,17 @@ public interface ApplicationMapper {
     int settle(@Param("id") Long id,
                @Param("settledAmount") BigDecimal settledAmount,
                @Param("status") ApplicationStatus status);
+
+    /**
+     * 新建申请（草稿）。
+     * useGeneratedKeys 让 MyBatis 把数据库生成的自增 id 回填到对象的 id 字段。
+     */
+    @Insert("""
+            INSERT INTO fund_application
+                (project_id, applicant_id, purpose, requested_amount, status)
+            VALUES
+                (#{projectId}, #{applicantId}, #{purpose}, #{requestedAmount}, #{status})
+            """)
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insert(FundApplication application);
 }

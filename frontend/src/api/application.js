@@ -8,6 +8,15 @@ export const listApplications = (projectId) =>
 export const getApplication = (id) => request.get(`/applications/${id}`)
 
 /**
+ * 新建申请草稿。
+ * data: { projectId, purpose, requestedAmount }
+ * 返回：新申请单的 id
+ *
+ * 申请人不由前端指定——后端从会话取。
+ */
+export const createApplication = (data) => request.post('/applications', data)
+
+/**
  * 五个业务操作。
  *
  * 注意两点：
