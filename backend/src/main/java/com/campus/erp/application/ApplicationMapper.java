@@ -35,6 +35,22 @@ public interface ApplicationMapper {
             """)
     List<FundApplication> findByProjectId(@Param("projectId") Long projectId);
 
+    /**
+     * 只查某个成员自己的申请。
+     * 用途：docs/02 要求「成员……不能因此看别人申请的详情」。
+     */
+    @Select("""
+            SELECT id, project_id, applicant_id, purpose,
+                   requested_amount, approved_amount, settled_amount,
+                   status, created_at, updated_at
+            FROM fund_application
+            WHERE project_id = #{projectId}
+              AND applicant_id = #{applicantId}
+            ORDER BY id DESC
+            """)
+    List<FundApplication> findByProjectIdAndApplicant(@Param("projectId") Long projectId,
+                                                      @Param("applicantId") Long applicantId);
+
     /** 只改状态（提交、拒绝、取消时用） */
     @Update("""
             UPDATE fund_application

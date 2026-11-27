@@ -77,6 +77,47 @@ public class ApplicationService {
     }
 
     // ============================================================
+    // 查询可见的申请列表
+    // 规则（docs/02）：成员只能看自己的；老师、财务可看所负责项目的全部
+    // 且都必须是该项目成员
+    // ============================================================
+    public java.util.List<FundApplication> listVisible(Long projectId, CurrentUser user) {
+
+        if (projectMapper.countMembership(projectId, user.getId()) == 0) {
+            throw new BizException(403, "你不在该项目中，无权查看");
+        }
+
+        // 老师与财务需要看全项目才能审批/结算
+        if (user.isTeacher() || user.isFinance()) {
+            return applicationMapper.findByProjectId(projectId);
+        }
+
+        // 成员（含管理员默认）只能看自己的
+        return applicationMapper.findByProjectIdAndApplicant(projectId, user.getId());
+    }
+
+    // ============================================================
+    // 查询单张申请的详情，同样要按角色校验可见性
+    // ============================================================
+    public FundApplication getDetail(Long applicationId, CurrentUser user) {
+
+        FundApplication app = requireApplication(applicationId);
+
+        if (projectMapper.countMembership(app.getProjectId(), user.getId()) == 0) {
+            throw new BizException(403, "你不在该项目中，无权查看");
+        }
+        // 本人可看自己的
+        if (app.getApplicantId().equals(user.getId())) {
+            return app;
+        }
+        // 老师、财务需要看别人的单子才能审批/结算
+        if (user.isTeacher() || user.isFinance()) {
+            return app;
+        }
+        throw new BizException(403, "无权查看他人的申请详情");
+    }
+
+    // ============================================================
     // 提交：草稿 → 待审批，冻结经费
     // 谁可以：申请人本人
     // ============================================================
@@ -110,6 +151,10 @@ public class ApplicationService {
         // ⑤ 余额
         if (project.getAvailable().compareTo(amount) < 0) {
             throw new BizException("可用经费不足，当前可用 " + project.getAvailable() + " 元");
+        }
+        // ⑥ 必须存在合法审批人：否则钱冻进去没人能批，会一直卡在冻结里
+        if (projectMapper.countAvailableApprovers(project.getId(), app.getApplicantId()) == 0) {
+            throw new BizException("该项目没有可用的审批人（需要一位属于本项目、且不是你本人的老师），请联系管理员配置");
         }
 
         projectMapper.freeze(project.getId(), amount);

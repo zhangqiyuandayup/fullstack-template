@@ -91,4 +91,23 @@ public interface ProjectMapper {
               AND member_id = #{memberId}
             """)
     int countMembership(@Param("projectId") Long projectId, @Param("memberId") Long memberId);
+
+    /**
+     * 查项目里有多少个【可用的合法审批人】。
+     *
+     * 条件：本项目成员、角色是 TEACHER、且不是申请人本人。
+     *
+     * 用途：docs/02 要求「提交时找不到合法审批人，应提示配置问题，不能冻结经费」。
+     * 如果返回 0，说明这张单子提交后没人能批，钱会卡在冻结里。
+     */
+    @Select("""
+            SELECT COUNT(*)
+            FROM project_member pm
+            JOIN member m ON m.id = pm.member_id
+            WHERE pm.project_id = #{projectId}
+              AND m.role = 'TEACHER'
+              AND pm.member_id <> #{applicantId}
+            """)
+    int countAvailableApprovers(@Param("projectId") Long projectId,
+                                @Param("applicantId") Long applicantId);
 }
