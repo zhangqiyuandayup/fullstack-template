@@ -35,24 +35,27 @@ import java.util.List;
 public class ApplicationController {
 
     private final ApplicationService applicationService;
-    private final ApplicationMapper applicationMapper;
 
-    public ApplicationController(ApplicationService applicationService,
-                                 ApplicationMapper applicationMapper) {
+    public ApplicationController(ApplicationService applicationService) {
         this.applicationService = applicationService;
-        this.applicationMapper = applicationMapper;
     }
 
-    /** 查询某个项目下的所有申请单 */
+    /**
+     * 查询某个项目下的申请单。
+     * 可见范围由 Service 按角色决定：成员只看自己的，老师与财务看全项目。
+     */
     @GetMapping
-    public Result<List<FundApplication>> listByProject(@RequestParam Long projectId) {
-        return Result.ok(applicationMapper.findByProjectId(projectId));
+    public Result<List<FundApplication>> listByProject(@RequestParam Long projectId,
+                                                       HttpSession session) {
+        CurrentUser user = SessionUtils.requireUser(session);
+        return Result.ok(applicationService.listVisible(projectId, user));
     }
 
-    /** 查询单张申请单 */
+    /** 查询单张申请单（同样按角色校验可见性） */
     @GetMapping("/{id}")
-    public Result<FundApplication> detail(@PathVariable Long id) {
-        return Result.ok(applicationMapper.findById(id));
+    public Result<FundApplication> detail(@PathVariable Long id, HttpSession session) {
+        CurrentUser user = SessionUtils.requireUser(session);
+        return Result.ok(applicationService.getDetail(id, user));
     }
 
     /**
